@@ -4,8 +4,11 @@ nextflow.enable.dsl=2
 /*
  * nf-fastqc main script
  * - Input:  *.fastq.gz under params.fastqc_raw_data
- * - Output: FastQC HTML + ZIP reports under ${params.project_folder}/${fastqc_output}
+ * - Output: FastQC HTML + ZIP reports under ${params.project_folder}/${OUTDIR_NAME}
  */
+
+// Global output folder name (visible to both process and workflow)
+def OUTDIR_NAME = params.fastqc_output ?: 'fastqc_output'
 
 process fastqc {
   tag "${f}"                 // shows which file is being processed in the logs
@@ -14,11 +17,10 @@ process fastqc {
 
   input:
     path f                   // single FASTQ file
-    val fastqc_output        // output folder name (used only for publishDir)
 
   // Publish all FastQC reports into:
-  //   ${params.project_folder}/${fastqc_output}
-  publishDir { "${params.project_folder}/${fastqc_output}" }, mode: 'copy'
+  //   ${params.project_folder}/${OUTDIR_NAME}
+  publishDir { "${params.project_folder}/${OUTDIR_NAME}" }, mode: 'copy'
 
   // Tell Nextflow which files are the real outputs
   output:
@@ -34,8 +36,8 @@ process fastqc {
 
 workflow {
 
-  // Define output subfolder name (default = "fastqc_output")
-  def fastqc_output = params.fastqc_output ?: "fastqc_output"
+  // Absolute final output directory
+  def outdir = "${params.project_folder}/${OUTDIR_NAME}"
 
   // Load all *.fastq.gz files from the raw data directory
   def data = Channel.fromPath("${params.fastqc_raw_data}/*fastq.gz")
@@ -44,9 +46,9 @@ workflow {
   data = data.filter { fq ->
     def fqName   = fq.getName()
     def htmlName = fqName.replaceAll(/.fastq.gz$/, "_fastqc.html")
-    ! file("${params.project_folder}/${fastqc_output}/${htmlName}").exists()
+    ! file("${outdir}/${htmlName}").exists()
   }
 
   // Run FastQC
-  fastqc(data, fastqc_output)
+  fastqc(data)
 }
