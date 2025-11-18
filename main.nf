@@ -2,37 +2,45 @@
 nextflow.enable.dsl=2
 
 
+// one global output folder name so both process & workflow can see it
+def fastqc_output = params.fastqc_output ?: "fastqc_output"
+
 process fastqc {
-  tag "${f}"                 // shows which file is being processed in the logs
-  stageInMode 'symlink'      // symlink input files into the work directory
-  stageOutMode 'move'        // (not really used here since we write outside workdir)
+  tag "${f}"                 
+  stageInMode 'symlink'      
+  stageOutMode 'move'        
 
   input:
-    path f                   // single FASTQ file
-    val fastqc_output        // just the folder name, e.g. "fastqc_output"
+    path f                
+
+  publishDir "${params.project_folder}/${fastqc_output}", mode: 'copy'
+
+  output:
+    path "*_fastqc.html"
+    path "*_fastqc.zip"
 
   script:
   """
-  mkdir -p "${params.project_folder}/${fastqc_output}"
-  fastqc -t ${task.cpus} -o "${params.project_folder}/${fastqc_output}" ${f}
+  fastqc -t ${task.cpus} ${f}
+
   """
 }
 
 workflow {
 
-  // decide output folder name
-  def fastqc_output = params.fastqc_output ?: "fastqc_output"
+  // final output directory (used only for the skip logic)
+  def outdir = "${params.project_folder}/${fastqc_output}"
 
   // load all *.fastq.gz
   def data = Channel.fromPath("${params.fastqc_raw_data}/*fastq.gz")
 
-  // skip samples that already have HTML report
+  // skip samples that already have HTML report in the FINAL output dir
   data = data.filter { f ->
     def fqName   = f.getName()
     def htmlName = fqName.replaceAll(/.fastq.gz$/, "_fastqc.html")
-    ! file("${params.project_folder}/${fastqc_output}/${htmlName}").exists()
+    ! file("${outdir}/${htmlName}").exists()
   }
 
-  // run FastQC
-  fastqc(data, fastqc_output)
+  // run FastQC on all remaining files
+  fastqc(data)
 }
