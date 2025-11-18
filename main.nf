@@ -1,8 +1,6 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-
-// one global output folder name so both process & workflow can see it
 def fastqc_output = params.fastqc_output ?: "fastqc_output"
 
 process fastqc {
@@ -28,13 +26,12 @@ process fastqc {
 
 workflow {
 
-  // final output directory (used only for the skip logic)
   def outdir = "${params.project_folder}/${fastqc_output}"
 
   // load all *.fastq.gz
   def data = Channel.fromPath("${params.fastqc_raw_data}/*fastq.gz")
 
-  // skip samples that already have HTML report in the FINAL output dir
+  // skip samples that already have HTML report
   data = data.filter { f ->
     def fqName   = f.getName()
     def htmlName = fqName.replaceAll(/.fastq.gz$/, "_fastqc.html")
