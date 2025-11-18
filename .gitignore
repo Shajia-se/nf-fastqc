@@ -1,0 +1,11 @@
+# Nextflow runtime & logs
+.nextflow*
+.nextflow/
+
+# Work directories & outputs
+work/
+*_output/
+
+# Jupyter / notebook
+.ipynb_checkpoints/
+configs/.ipynb_checkpoints/
