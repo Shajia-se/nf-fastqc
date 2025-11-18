@@ -15,9 +15,13 @@ process fastqc {
 
   input:
     path f                   // single FASTQ file
-    val fastqc_output        // output directory name (string)
+    val fastqc_output        // output folder name (used only for publishDir)
 
-  publishDir "${params.project_folder}", mode: 'copy'
+  publishDir { "${params.project_folder}/${fastqc_output}" }, mode: 'copy'
+
+  output:
+    path "*_fastqc.html"
+    path "*_fastqc.zip"
 
   script:
   """
@@ -28,19 +32,15 @@ process fastqc {
 
 workflow {
 
-    // Define output directory name (default = "fastqc_output")
     def fastqc_output = params.fastqc_output ?: "fastqc_output"
 
-    // Load all *.fastq.gz files from the raw data directory
     def data = Channel.fromPath("${params.fastqc_raw_data}/*fastq.gz")
 
-    // Skip samples whose FastQC report already exists
     data = data.filter { fq ->
         def fqName   = fq.getName()
         def htmlName = fqName.replaceAll(/.fastq.gz$/, "_fastqc.html")
         ! file("${params.project_folder}/${fastqc_output}/${htmlName}").exists()
     }
 
-    // Run FastQC
     fastqc(data, fastqc_output)
 }
