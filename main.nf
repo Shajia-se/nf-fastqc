@@ -1,54 +1,38 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
-/*
- * nf-fastqc main script
- * - Input:  *.fastq.gz under params.fastqc_raw_data
- * - Output: FastQC HTML + ZIP reports under ${params.project_folder}/${OUTDIR_NAME}
- */
-
-// Global output folder name (visible to both process and workflow)
-def OUTDIR_NAME = params.fastqc_output ?: 'fastqc_output'
 
 process fastqc {
   tag "${f}"                 // shows which file is being processed in the logs
   stageInMode 'symlink'      // symlink input files into the work directory
-  stageOutMode 'move'        // move results out of the work directory after completion
+  stageOutMode 'move'        // (not really used here since we write outside workdir)
 
   input:
     path f                   // single FASTQ file
-
-  // Publish all FastQC reports into:
-  //   ${params.project_folder}/${OUTDIR_NAME}
-  publishDir { "${params.project_folder}/${OUTDIR_NAME}" }, mode: 'copy'
-
-  // Tell Nextflow which files are the real outputs
-  output:
-    path "*_fastqc.html"
-    path "*_fastqc.zip"
+    val fastqc_output        // just the folder name, e.g. "fastqc_output"
 
   script:
   """
-  # Run FastQC in the current work directory
-  fastqc -t ${task.cpus} ${f}
+  mkdir -p "${params.project_folder}/${fastqc_output}"
+  fastqc -t ${task.cpus} -o "${params.project_folder}/${fastqc_output}" ${f}
   """
 }
 
 workflow {
 
-  // Absolute final output directory
-  def outdir = "${params.project_folder}/${OUTDIR_NAME}"
+  // decide output folder name
+  def fastqc_output = params.fastqc_output ?: "fastqc_output"
 
-  // Load all *.fastq.gz files from the raw data directory
+  // load all *.fastq.gz
   def data = Channel.fromPath("${params.fastqc_raw_data}/*fastq.gz")
 
-  // Skip samples whose FastQC report already exists in the final output directory
-  data = data.filter { fq ->
-    def fqName   = fq.getName()
+  // skip samples that already have HTML report
+  data = data.filter { f ->
+    def fqName   = f.getName()
     def htmlName = fqName.replaceAll(/.fastq.gz$/, "_fastqc.html")
-    ! file("${outdir}/${htmlName}").exists()
+    ! file("${params.project_folder}/${fastqc_output}/${htmlName}").exists()
   }
 
-  // Run FastQC
-  fastqc(data)
+  // run FastQC
+  fastqc(data, fastqc_output)
 }
