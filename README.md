@@ -12,8 +12,8 @@ Supports both **local (Docker)** and **HPC (Slurm + Singularity)** execution.
 mkdir -p ~/nf-fastqc/test_data
 cd test_data
 
-wget [https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_1.fastq.gz](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_1.fastq.gz)
-wget [https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_2.fastq.gz](https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_2.fastq.gz)
+wget https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_1.fastq.gz
+wget https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_2.fastq.gz
 
 ```
 
@@ -29,8 +29,8 @@ nextflow run main.nf -profile local
 
 Requirements:
 - Nextflow
-- Fastqc image (docker pull biocontainers/fastqc:v0.11.9_cv8)
-- `configs/local.config` (included)
+- Fastqc image `docker pull biocontainers/fastqc:v0.11.9_cv8`
+- `configs/local.config`
 
 ---
 
@@ -46,7 +46,7 @@ Requirements:
 - Slurm scheduler
 - Singularity available
 - FastQC `.sif` at: `$HOME/singularity_image/fastqc-0.11.9.sif`
-- `configs/slurm.config` (included)
+- `configs/slurm.config` 
 
 Output is written to:
 
