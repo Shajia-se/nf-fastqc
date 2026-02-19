@@ -7,7 +7,6 @@ process fastqc {
   tag "${f}"                 
   stageInMode 'symlink'      
   stageOutMode 'move'        
-  env.TMPDIR = "${task.workDir}/tmp"
 
   input:
     path f                
