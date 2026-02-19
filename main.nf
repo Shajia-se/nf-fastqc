@@ -7,6 +7,7 @@ process fastqc {
   tag "${f}"                 
   stageInMode 'symlink'      
   stageOutMode 'move'        
+  env.TMPDIR = "${task.workDir}/tmp"
 
   input:
     path f                
@@ -19,6 +20,9 @@ process fastqc {
 
   script:
   """
+  mkdir -p tmp
+  export TMPDIR=\$PWD/tmp
+  export _JAVA_OPTIONS="-Djava.io.tmpdir=\$PWD/tmp"
   fastqc -t ${task.cpus} ${f}
 
   """
