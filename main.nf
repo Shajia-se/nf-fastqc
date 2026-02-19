@@ -28,13 +28,16 @@ workflow {
 
   def outdir = "${params.project_folder}/${fastqc_output}"
 
-  // load all *.fastq.gz
-  def data = Channel.fromPath("${params.fastqc_raw_data}/*fastq.gz")
+  // load FASTQ by configurable pattern
+  def pattern = params.fastqc_pattern ?: "*fastq.gz"
+  def data = Channel
+    .fromPath("${params.fastqc_raw_data}/${pattern}", checkIfExists: true)
+    .ifEmpty { exit 1, "ERROR: No FASTQ files found for pattern: ${params.fastqc_raw_data}/${pattern}" }
 
   // skip samples that already have HTML report
   data = data.filter { f ->
     def fqName   = f.getName()
-    def htmlName = fqName.replaceAll(/.fastq.gz$/, "_fastqc.html")
+    def htmlName = fqName.replaceFirst(/\.fastq\.gz$/, "_fastqc.html")
     ! file("${outdir}/${htmlName}").exists()
   }
 
