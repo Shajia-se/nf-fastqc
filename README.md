@@ -1,83 +1,68 @@
 # nf-fastqc
 
-A simple, portable FastQC pipeline using **Nextflow**.  
-Supports both **local (Docker)** and **HPC (Slurm + Singularity)** execution.
+`nf-fastqc` is a Nextflow DSL2 module for running FastQC on raw FASTQ files.
 
----
+## What This Module Does
 
-## 📁 Demo data
+1. Reads FASTQ files from `params.fastqc_raw_data` using `params.fastqc_pattern`.
+2. Skips samples with existing `${sample}_fastqc.html` in output.
+3. Runs `fastqc` on remaining samples.
+4. Publishes outputs to `${params.project_folder}/${params.fastqc_output}`.
 
-```
+## Input
 
-mkdir -p ~/nf-fastqc/test_data
-cd test_data
+- Directory: `params.fastqc_raw_data`
+- File pattern: `params.fastqc_pattern` (default: `*fastq.gz`)
+- Expected file type: gzipped FASTQ (`.fastq.gz`)
 
-wget https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_1.fastq.gz
-wget https://ftp.sra.ebi.ac.uk/vol1/fastq/SRR155/007/SRR1553607/SRR1553607_2.fastq.gz
+## Output
 
-```
+Under `${project_folder}/${fastqc_output}` (default: `./fastqc_output/`):
+- `*_fastqc.html`
+- `*_fastqc.zip`
 
----
+## Key Parameters
 
-## 🚀 Run locally (Docker)
+Defined in `nextflow.config`:
+- `project_folder`: output base folder (default: `$PWD`)
+- `fastqc_raw_data`: input FASTQ folder
+- `fastqc_pattern`: input matching pattern
+- `fastqc_output`: output folder name
+- `cpus`, `memory`, `time`: process resources
 
-```
+## Run
 
+```bash
 nextflow run main.nf -profile local
-
 ```
 
-Requirements:
-- Nextflow
-- Fastqc image `docker pull biocontainers/fastqc:v0.11.9_cv8`
-- `configs/local.config`
-
----
-
-## 🚀 Run on HPC (Slurm + Singularity)
-
-```
-
+```bash
 nextflow run main.nf -profile hpc
-
 ```
 
-Requirements:
-- Slurm scheduler
-- Singularity available
-- FastQC `.sif` at: `$HOME/singularity_image/fastqc-0.11.9.sif`
-- `configs/slurm.config` 
-
-Output is written to:
-
+```bash
+nextflow run main.nf -profile hpc \
+  --fastqc_raw_data /your/fastq/path \
+  --fastqc_pattern "*fastq.gz" \
+  --fastqc_output fastqc_output
 ```
 
-fastqc_output/
-
+Resume previous run:
+```bash
+nextflow run main.nf -profile hpc -resume
 ```
 
----
+## Notes For HPC
 
-## 📂 Project structure
+- The module sets `TMPDIR` and Java tmpdir inside task work directory to avoid `/tmp` space issues.
+- If a run fails, check `.nextflow.log` and `work/<hash>/.command.err`.
 
-```
+## Project Structure
 
+```text
 main.nf
 nextflow.config
 configs/
-├── local.config      # local + Docker
-└── slurm.config      # HPC + Slurm + Singularity
-test_data/               # optional demo data
-
+  local.config
+  slurm.config
 ```
-
----
-
-## ✔️ What this pipeline does
-
-- Runs FastQC on all `*.fastq.gz` files  
-- Skips samples already processed  
-- Publishes results to `fastqc_output/`  
-- Works identically on local and HPC environments  
-
----
