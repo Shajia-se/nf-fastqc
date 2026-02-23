@@ -14,6 +14,7 @@
 - Directory: `params.fastqc_raw_data`
 - File pattern: `params.fastqc_pattern` (default: `*fastq.gz`)
 - Expected file type: gzipped FASTQ (`.fastq.gz`)
+- Optional: `params.samples_master` (CSV). If provided, FASTQ files are read from columns `fastq_r1` / `fastq_r2` (rows with `enabled=false` are skipped).
 
 ## Output
 
@@ -44,6 +45,13 @@ nextflow run main.nf -profile hpc
 nextflow run main.nf -profile hpc \
   --fastqc_raw_data /your/fastq/path \
   --fastqc_pattern "*fastq.gz" \
+  --fastqc_output fastqc_output
+```
+
+Use samples master table:
+```bash
+nextflow run main.nf -profile hpc \
+  --samples_master /path/to/samples_master.csv \
   --fastqc_output fastqc_output
 ```
 
