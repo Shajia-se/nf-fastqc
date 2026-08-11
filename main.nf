@@ -54,17 +54,22 @@ workflow {
       .ifEmpty { exit 1, "ERROR: No FASTQ files found from samples_master: ${params.samples_master}" }
   } else {
     // load FASTQ by configurable pattern
+    if (!params.fastqc_raw_data) {
+      exit 1, "ERROR: Either --samples_master or --fastqc_raw_data must be provided"
+    }
     def pattern = params.fastqc_pattern ?: "*fastq.gz"
     data = Channel
       .fromPath("${params.fastqc_raw_data}/${pattern}", checkIfExists: true)
       .ifEmpty { exit 1, "ERROR: No FASTQ files found for pattern: ${params.fastqc_raw_data}/${pattern}" }
   }
 
-  // skip samples that already have HTML report
+  // skip samples only when both standard FastQC outputs already exist
   data = data.filter { f ->
     def fqName   = f.getName()
-    def htmlName = fqName.replaceFirst(/\.(fastq|fq)(\.gz)?$/, "_fastqc.html")
-    ! file("${outdir}/${htmlName}").exists()
+    def baseName = fqName.replaceFirst(/\.(fastq|fq)(\.gz)?$/, "")
+    def htmlName = "${baseName}_fastqc.html"
+    def zipName  = "${baseName}_fastqc.zip"
+    !(file("${outdir}/${htmlName}").exists() && file("${outdir}/${zipName}").exists())
   }
 
   // run FastQC on all remaining files
